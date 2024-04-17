@@ -8,13 +8,31 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/common-nighthawk/go-figure"
 )
 
+type ThreadPoolOptions struct {
+	pool          ThreadPool
+	useThreadPool bool
+}
+type DiselOptions struct {
+	threadPool ThreadPoolOptions
+}
+
+func NewDiselOptions() DiselOptions {
+	return DiselOptions{
+		threadPool: ThreadPoolOptions{
+			pool:          ThreadPool{},
+			useThreadPool: false,
+		},
+	}
+}
+
 type Disel struct {
-	Options      map[string]string
+	Options      DiselOptions
 	Log          *Logger
 	GetHandlers  RadixTree
 	PostHandlers RadixTree
@@ -24,15 +42,18 @@ type DiselHandlerFunc func(c *Context) error
 
 func New() Disel {
 	return Disel{
-		Options:      make(map[string]string),
+		Options:      DiselOptions{},
 		Log:          InitLogger(),
 		GetHandlers:  NewRadixTree(),
 		PostHandlers: NewRadixTree(),
 	}
 }
 
-func (d *Disel) AddOption(optionKey string, optionValue string) {
-	d.Options[optionKey] = optionValue
+func (d *Disel) UseThreadPool(poolSize int) {
+	d.Options.threadPool.useThreadPool = true
+	var wg sync.WaitGroup
+	d.Options.threadPool.pool = NewThreadPool(poolSize, &wg)
+
 }
 
 func (d *Disel) GET(path string, handler DiselHandlerFunc) error {
@@ -53,9 +74,7 @@ func (d *Disel) ServeHTTP(host string, port int) error {
 		fmt.Println("Failed to bind to port")
 		os.Exit(1)
 	}
-
-	welcomeMsg := figure.NewColorFigure("Disel", "", "green", true)
-	welcomeMsg.Print()
+	displayWelcomeMessage()
 	d.Log.Infof("Server Stated on port... %d", port)
 
 	for {
@@ -64,8 +83,18 @@ func (d *Disel) ServeHTTP(host string, port int) error {
 			fmt.Println("Error accepting connection: ", err.Error())
 			os.Exit(1)
 		}
-		go d.handleConnection(conn)
+		if d.Options.threadPool.useThreadPool {
+			d.Options.threadPool.pool.Add(func() { d.handleConnection(conn) })
+		} else {
+			go d.handleConnection(conn)
+		}
 	}
+}
+
+func displayWelcomeMessage() {
+	welcomeMsg := figure.NewColorFigure("Disel", "", "green", false)
+	welcomeMsg.Print()
+	fmt.Printf("\n")
 }
 
 func (d *Disel) execHandler(ctx *Context) error {
@@ -123,7 +152,8 @@ func (d *Disel) handleConnection(conn net.Conn) {
 			Ctx:     context.Background(),
 		}
 
-		_ = d.execHandler(ctx)
+		//handle error from the exec handler
+		d.execHandler(ctx)
 		sentBytes, err := conn.Write([]byte(ctx.Response.body))
 		if err != nil {
 			d.Log.Debug("Error writing response: ", err.Error())

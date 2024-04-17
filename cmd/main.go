@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"strings"
+	"time"
 
 	disel "github.com/harish876/disel/core"
 )
@@ -13,16 +14,14 @@ type ExampleBody struct {
 }
 
 func main() {
-	directory := flag.String("directory", "/tmp/data/codecrafters.io/http-server-test", "Directory")
 	flag.Parse()
 
 	host := "0.0.0.0"
 	port := 42069
 
 	app := disel.New()
-	app.Log.SetLevel(disel.DEBUG).Build()
-
-	app.AddOption("directory", *directory)
+	// app.UseThreadPool(1)
+	app.Log.SetLevel(disel.INFO).Build()
 
 	app.GET("/", func(c *disel.Context) error {
 		return c.Status(200).Send("Success")
@@ -39,6 +38,7 @@ func main() {
 
 	app.POST("/echo", func(c *disel.Context) error {
 		var body ExampleBody
+		time.Sleep(5 * time.Second)
 		if err := json.NewDecoder(c.Request.Body).Decode(&body); err != nil {
 			return c.Status(400).Send("Unable to Decode Body")
 		}
