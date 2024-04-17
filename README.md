@@ -1,6 +1,5 @@
 # Disel - A simple HTTP Framework Written in Go
-
-Brief description of your project.
+Disel, is a simple HTTP framework which can handle serving HTTP requests, routing and logging out of the box named after Shaq the most dominant center ever to play Ball. 
 
 ## Table of Contents
 - [Overview](#overview)
@@ -11,9 +10,7 @@ Brief description of your project.
 
 
 ## Overview
-Disel, is a simple HTTP framework which can handle serving HTTP requests, routing and logging out of the box named after Shaq the most dominant center every to play. 
-This project is an extension of a few challenges 
-I am doing from codecrafters. To know more about these challenges please visit these repos:
+This project is an extension of a few challenges  I am doing from codecrafters. To know more about these challenges please visit these repos:
  - Build your own HTTP Challenge - https://github.com/harish876/harish876-codecrafters-http-server-go  [COMPLETED]
  - Build your own REDIS Challenge - https://github.com/harish876/harish876-codecrafters-redis-go       [IN_PROGRESS]
  - Build your own DNS Challenge -   https://github.com/harish876/harish876-codecrafters-dns-server-go  [IN_PROGRESS]
