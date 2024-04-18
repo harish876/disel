@@ -31,20 +31,24 @@ func NewDiselOptions() DiselOptions {
 }
 
 type Disel struct {
-	Options      DiselOptions
-	Log          *Logger
-	GetHandlers  RadixTree
-	PostHandlers RadixTree
+	Options        DiselOptions
+	Log            *Logger
+	GetHandlers    RadixTree
+	PostHandlers   RadixTree
+	PutHandlers    RadixTree
+	DeleteHandlers RadixTree
 }
 
 type DiselHandlerFunc func(c *Context) error
 
 func New() Disel {
 	return Disel{
-		Options:      DiselOptions{},
-		Log:          InitLogger(),
-		GetHandlers:  NewRadixTree(),
-		PostHandlers: NewRadixTree(),
+		Options:        DiselOptions{},
+		Log:            InitLogger(),
+		GetHandlers:    NewRadixTree(),
+		PostHandlers:   NewRadixTree(),
+		PutHandlers:    NewRadixTree(),
+		DeleteHandlers: NewRadixTree(),
 	}
 }
 
@@ -97,7 +101,9 @@ func displayWelcomeMessage() {
 
 func (d *Disel) execHandler(ctx *Context) error {
 	var handler DiselHandlerFunc
-	if ctx.Request.Method == "GET" {
+	switch ctx.Request.Method {
+
+	case "GET":
 		node, found := d.GetHandlers.Search(ctx.Request.Path)
 		d.Log.Debug("Incoming GET Route Path is", ctx.Request.Path)
 		if !found {
@@ -107,7 +113,7 @@ func (d *Disel) execHandler(ctx *Context) error {
 			d.Log.Debug("GET Handler is", handler)
 		}
 
-	} else if ctx.Request.Method == "POST" {
+	case "POST":
 		node, found := d.PostHandlers.Search(ctx.Request.Path)
 		d.Log.Debug("Incoming POST Route Path is", ctx.Request.Path)
 		if !found {
@@ -116,9 +122,30 @@ func (d *Disel) execHandler(ctx *Context) error {
 			handler = *node.Value.(*DiselHandlerFunc)
 			d.Log.Debug("POST Handler is", handler)
 		}
-	} else {
+
+	case "PUT", "PATCH":
+		node, found := d.PutHandlers.Search(ctx.Request.Path)
+		d.Log.Debug("Incoming PUT Route Path is", ctx.Request.Path)
+		if !found {
+			handler = nil
+		} else {
+			handler = *node.Value.(*DiselHandlerFunc)
+			d.Log.Debug("PUT Handler is", handler)
+		}
+
+	case "DELETE":
+		node, found := d.DeleteHandlers.Search(ctx.Request.Path)
+		d.Log.Debug("Incoming DELETE Route Path is", ctx.Request.Path)
+		if !found {
+			handler = nil
+		} else {
+			handler = *node.Value.(*DiselHandlerFunc)
+			d.Log.Debug("DELETE Handler is", handler)
+		}
+	default:
 		handler = nil
 	}
+
 	if handler == nil {
 		ctx.Status(404).Send(fmt.Sprintf("Route Not found for Incoming Path %s", ctx.Request.Path))
 		return nil
