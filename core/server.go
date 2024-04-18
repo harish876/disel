@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -76,7 +75,6 @@ func (d *Disel) ServeHTTP(host string, port int) error {
 	}
 	displayWelcomeMessage()
 	d.Log.Infof("Server Stated on port... %d", port)
-
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -131,7 +129,6 @@ func (d *Disel) execHandler(ctx *Context) error {
 		ctx.Status(http.StatusInternalServerError).Send("Not Found")
 		return err
 	}
-	log.Println(ctx.Response.body)
 	return nil
 }
 
@@ -140,7 +137,7 @@ func (d *Disel) handleConnection(conn net.Conn) {
 		buf := make([]byte, 1024)
 		recievedBytes, err := conn.Read(buf)
 		if err == io.EOF || err != nil {
-			log.Println(err)
+			d.Log.Debug(err)
 			break
 		}
 		request := buf[:recievedBytes]
@@ -152,8 +149,10 @@ func (d *Disel) handleConnection(conn net.Conn) {
 			Ctx:     context.Background(),
 		}
 
-		//handle error from the exec handler
-		d.execHandler(ctx)
+		err = d.execHandler(ctx)
+		if err != nil {
+			d.Log.Error(err)
+		}
 		sentBytes, err := conn.Write([]byte(ctx.Response.body))
 		if err != nil {
 			d.Log.Debug("Error writing response: ", err.Error())

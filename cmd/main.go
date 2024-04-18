@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"strings"
 	"time"
 
 	disel "github.com/harish876/disel/core"
@@ -20,20 +19,15 @@ func main() {
 	port := 42069
 
 	app := disel.New()
-	// app.UseThreadPool(1)
-	app.Log.SetLevel(disel.INFO).Build()
+	// app.UseThreadPool(1) // Thread Pool Hangs when number of concurrent requests exceeds pool size.
+	app.Log.SetLevel(disel.DEBUG).Build()
 
 	app.GET("/", func(c *disel.Context) error {
 		return c.Status(200).Send("Success")
 	})
 
 	app.GET("/echo", func(c *disel.Context) error {
-		if len(c.Request.PathParams) > 0 {
-			content := strings.Join(c.Request.PathParams, "/")
-			return c.Status(200).Send(content)
-		} else {
-			return c.Status(200).Send("Success")
-		}
+		return c.Status(200).Send("Success")
 	})
 
 	app.POST("/echo", func(c *disel.Context) error {

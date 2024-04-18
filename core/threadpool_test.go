@@ -9,13 +9,13 @@ import (
 
 func TestThreadPool(t *testing.T) {
 	var wg sync.WaitGroup
-	pool := NewThreadPool(5, &wg)
+	pool := NewThreadPool(1, &wg)
 	pool.Add(func() {
 		time.Sleep(5 * time.Second)
 		fmt.Println("Job Id-1")
 	})
 	pool.Add(func() {
-		time.Sleep(10 * time.Second)
+		time.Sleep(2 * time.Second)
 		fmt.Println("Job Id-2")
 	})
 	pool.Add(func() {
@@ -34,5 +34,5 @@ func TestThreadPool(t *testing.T) {
 		time.Sleep(5 * time.Second)
 		fmt.Println("Job Id-6")
 	})
-	wg.Wait()
+	pool.Wait()
 }
