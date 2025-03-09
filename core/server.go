@@ -83,14 +83,20 @@ func (d *Disel) ServeHTTP(host string, port int) error {
 		conn, err := listener.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err.Error())
-			os.Exit(1)
+			break
 		}
+		defer conn.Close()
 		if d.Options.threadPool.useThreadPool {
-			d.Options.threadPool.pool.Add(func() { d.handleConnection(conn) })
+			d.Options.threadPool.pool.Add(func() {
+				d.handleConnection(conn)
+			})
 		} else {
 			go d.handleConnection(conn)
 		}
 	}
+	d.Options.threadPool.pool.Wait()
+	os.Exit(1)
+	return nil
 }
 
 func displayWelcomeMessage() {

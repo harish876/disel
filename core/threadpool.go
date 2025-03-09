@@ -30,7 +30,6 @@ func NewWorker(id int, workChan chan Work, wg *sync.WaitGroup) Worker {
 
 func (w *Worker) Start() {
 	go func() {
-		defer w.Wg.Done()
 		for work := range w.WorkChan {
 			fmt.Printf("Task Picked by Worker: %d\n", w.Id)
 			work()
@@ -41,14 +40,13 @@ func (w *Worker) Start() {
 
 func NewThreadPool(poolSize int, wg *sync.WaitGroup) ThreadPool {
 	workers := make([]Worker, 0)
-	workChan := make(chan Work, 10)
+	workChan := make(chan Work)
 	for i := 0; i < poolSize; i++ {
 		id := i + 1
 		worker := NewWorker(id, workChan, wg)
 		workers = append(workers, worker)
 		worker.Start()
 	}
-	wg.Add(poolSize)
 
 	return ThreadPool{
 		PoolSize: poolSize,
@@ -59,7 +57,11 @@ func NewThreadPool(poolSize int, wg *sync.WaitGroup) ThreadPool {
 }
 
 func (t *ThreadPool) Add(work Work) {
-	t.WorkChan <- work
+	t.wg.Add(1)
+	t.WorkChan <- func() {
+		work()
+		t.wg.Done()
+	}
 }
 
 func (t *ThreadPool) Wait() {

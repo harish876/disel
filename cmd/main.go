@@ -19,7 +19,7 @@ func main() {
 	port := 42069
 
 	app := disel.New()
-	// app.UseThreadPool(1) // Thread Pool Hangs when number of concurrent requests exceeds pool size.
+	//app.UseThreadPool(1) // Thread Pool Hangs when number of concurrent requests exceeds pool size.
 	app.Log.SetLevel(disel.DEBUG).Build()
 
 	app.GET("/", func(c *disel.Context) error {
